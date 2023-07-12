@@ -1,0 +1,176 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using GestaoDeArquivo.Data;
+using GestaoDeArquivo.Models;
+
+namespace GestaoDeArquivo.Controllers
+{
+    public class DocsController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+
+        public DocsController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        // GET: Docs
+        public async Task<IActionResult> Index()
+        {
+            var applicationDbContext = _context.Documentos.Include(d => d.Doc_Name);
+            return View(await applicationDbContext.ToListAsync());
+        }
+        public IActionResult IndexWithFiltros(string filter/*, int filterint*/)//ao passar uma função aqui<== de onde é que o seu valor vem 
+        {
+
+            IEnumerable<Arquivo> objArquivoList = _context.Docs.Where(x => x.Doc_Name.Contains(filter)).OrderBy(x => x.Doc_Name);
+
+            return View(objArquivoList);
+
+        }
+
+        // GET: Docs/Details/5
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (id == null || _context.Documentos == null)
+            {
+                return NotFound();
+            }
+
+            var docs = await _context.Documentos
+                .Include(d => d.Doc_Name)
+                .FirstOrDefaultAsync(m => m.Doc_Id == id);
+            if (docs == null)
+            {
+                return NotFound();
+            }
+
+            return View(docs);
+        }
+
+        // GET: Docs/Create
+        public IActionResult Create()
+        {
+            ViewData["Doc_Id"] = new SelectList(_context.Arquivo, "Doc_Id", "Doc_Name");
+            return View();
+        }
+
+        // POST: Docs/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("Doc_Id,Doc_Name,Doc_Id,Doc_extencao")] Docs docs)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Add(docs);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            ViewData["Doc_Id"] = new SelectList(_context.Arquivo, "Doc_Id", "Doc_Name", docs.Doc_Id);
+            return View(docs);
+        }
+
+        // GET: Docs/Edit/5
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null || _context.Documentos == null)
+            {
+                return NotFound();
+            }
+
+            var docs = await _context.Documentos.FindAsync(id);
+            if (docs == null)
+            {
+                return NotFound();
+            }
+            ViewData["Doc_Id"] = new SelectList(_context.Arquivo, "Doc_Id", "Doc_Name", docs.Doc_Id);
+            return View(docs);
+        }
+
+        // POST: Docs/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("Doc_Id,Doc_Name,Doc_Id,Doc_extencao")] Docs docs)
+        {
+            if (id != docs.Doc_Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(docs);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!DocsExists(docs.Doc_Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            ViewData["Doc_Id"] = new SelectList(_context.Arquivo, "Doc_Id", "Doc_Name", docs.Doc_Id);
+            return View(docs);
+        }
+
+        // GET: Docs/Delete/5
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null || _context.Documentos == null)
+            {
+                return NotFound();
+            }
+
+            var docs = await _context.Documentos
+                .Include(d => d.Doc_Name)
+                .FirstOrDefaultAsync(m => m.Doc_Id == id);
+            if (docs == null)
+            {
+                return NotFound();
+            }
+
+            return View(docs);
+        }
+
+        // POST: Docs/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            if (_context.Documentos == null)
+            {
+                return Problem("Entity set 'ApplicationDbContext.Documentos'  is null.");
+            }
+            var docs = await _context.Documentos.FindAsync(id);
+            if (docs != null)
+            {
+                _context.Documentos.Remove(docs);
+            }
+            
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        private bool DocsExists(int id)
+        {
+          return (_context.Documentos?.Any(e => e.Doc_Id == id)).GetValueOrDefault();
+        }
+    }
+}
